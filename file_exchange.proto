@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package fileexchange;
+
+// Interface exported by the server.
+service FileExchange {
+  // Allow file content to be stored on a server and retrieved by supplying an ID.
+  // The content of large files will be sent as multiple messages.
+
+  // Send a file to the server, possibly in multiple chunks
+  rpc PutFile(stream FileContent) returns (FileId) {}
+
+  // Request the content of a file from the server
+  rpc GetFileContent(FileId) returns (stream FileContent) {}
+
+  // TODO: Add RPCs for getting info about the file (e.g. its name and size)
+  // without actually retrieving its full content
+}
+
+message FileId {
+  int32 id = 1;
+}
+
+message FileContent {
+  int32  id = 1;
+  string name = 2;
+  bytes  content = 3;
+}
