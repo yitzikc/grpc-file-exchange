@@ -24,5 +24,9 @@ message FileId {
 message FileContent {
   int32  id = 1;
   string name = 2;
+
+  // TODO: Consider avoiding copying when initialising the content field by using [ctype = STRING_PIECE]
+  // See: https://stackoverflow.com/a/43824243/1268949
+  // Note this seems to be available only in the latest versios of Protobuf from late 2018.
   bytes  content = 3;
 }
