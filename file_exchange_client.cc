@@ -1,19 +1,22 @@
-#include <chrono>
 #include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 #include <string>
+#include <cstdlib>
 #include <cstdint>
-#include <thread>
+#include <utility>
+#include <sysexits.h>
 
 #include <grpc/grpc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
-// #include "helper.h"
 #include "file_exchange.grpc.pb.h"
+
+#include "sequential_file_reader.h"
+#include "utils.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -33,14 +36,41 @@ FileId MakeFileId(std::int32_t id)
     return fid;
 }
 
-FileContent MakeFileContent(std::int32_t id, const std::string& name, const void* data, size_t data_len)
+FileContent MakeFileContent(std::int32_t id, const std::string name, const void* data, size_t data_len)
 {
     FileContent fc;
     fc.set_id(id);
-    fc.set_name(name);
+    fc.set_name(std::move(name));
     fc.set_content(data, data_len);
     return fc;
 }
+
+template <class StreamWriter>
+class FileReaderIntoStream : public SequentialFileReader {
+public:
+    FileReaderIntoStream(const std::string& filename, std::int32_t id, StreamWriter& writer)
+        : SequentialFileReader(filename)
+        , m_writer(writer)
+        , m_id(id)
+    {
+    }
+
+    using SequentialFileReader::SequentialFileReader;
+    using SequentialFileReader::operator=;
+
+protected:
+    virtual void OnChunkAvailable(const void* data, size_t size) override
+    {
+        std::string path = GetFilePath();
+        const std::string remote_filename = extract_basename(path);
+        FileContent fc = MakeFileContent(m_id, remote_filename, data, size);
+        m_writer.Write(fc);
+    }
+
+private:
+    StreamWriter& m_writer;
+    std::uint32_t m_id;
+};
 
 class FileExchangeClient {
 public:
@@ -50,27 +80,35 @@ public:
 
     }
 
-    void PutFile(std::int32_t id, const std::string& path)
+    void PutFile(std::int32_t id, const std::string& filename)
     {
         FileId returnedId;
         ClientContext context;
 
         std::unique_ptr<ClientWriter<FileContent>> writer(m_stub->PutFile(&context, &returnedId));
+        try {
+            FileReaderIntoStream< ClientWriter<FileContent> > reader(filename, id, *writer);
 
-        std::vector<std::uint8_t> dummy_data { 'A', 'B', 'C', '\n' };
-        // TODO: Make this a loop
-        FileContent fc = MakeFileContent(id, path, dummy_data.data(), dummy_data.size());
-        writer->Write(fc);
+            // TODO: Make the chunk size configurable
+            const size_t chunk_size = 1UL << 20;    // Hardcoded to 1MB, which seems to be recommended from experience.
+            reader.Read(chunk_size);
+        }
+        catch (const std::exception& ex) {
+            std::cerr << "Failed to send the file " << filename << ": " << ex.what() << std::endl;
+            // TODO: Fail the RPC and return
+            // return;
+        }
 
         writer->WritesDone();
         Status status = writer->Finish();
         if (!status.ok()) {
-            std::cerr << "RouteChat rpc failed: " << status.error_message() << std::endl;
+            std::cerr << "File Exchange rpc failed: " << status.error_message() << std::endl;
         }
         else {
             std::cout << "Finished sending file with id " << returnedId.id() << std::endl;
         }
 
+        return;
     }
 
     void GetFileContent(std::int32_t id)
@@ -83,9 +121,15 @@ private:
 
 int main(int argc, char** argv)
 {
-    FileExchangeClient client(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
-    // FIXME: Actually parse CLI
+    if (4 != argc) {
+        std::cerr << "USAGE: " << argv[0] << "[put|get] num_id [filename]" << std::endl;
+        return EX_USAGE;
+    }
 
-    client.PutFile(1, "dummy.txt"); 
+    FileExchangeClient client(grpc::CreateChannel("localhost:50051", grpc::InsecureChannelCredentials()));
+    
+    const std::int32_t id = std::atoi(argv[2]);
+    const std::string filename = argv[3];
+    client.PutFile(id, filename); 
     return 0;
 }

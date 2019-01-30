@@ -18,7 +18,10 @@ GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
 PROTOS_PATH = .
 PROJECT_NAME = file_exchange
-COMMON_OBJS = $(PROJECT_NAME).pb.o $(PROJECT_NAME).grpc.pb.o # helper.o
+
+# FIXME: Define dependencies on the h files correctly using e.g. makedepend
+
+COMMON_OBJS = $(PROJECT_NAME).pb.o $(PROJECT_NAME).grpc.pb.o sequential_file_reader.o utils.o
 
 vpath %.proto $(PROTOS_PATH)
 
