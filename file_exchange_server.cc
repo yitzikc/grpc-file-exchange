@@ -43,6 +43,7 @@ public:
             if (! ofs.is_open()) {
                 try {
                     ofs = OpenFileForWriting(contentPart.id(), contentPart.name());
+                    summary->set_id(contentPart.id());
                 }
                 catch (const std::system_error& ex) {
                     // TODO: Distignuish various possible errors based on the error code, and return more specific error codes.
@@ -56,7 +57,7 @@ public:
             catch (const std::system_error& ex) {
                 // FIXME: Check that the name and ID suplied in the current message are same as in the initial message
 
-                std::remove(contentPart.name().c_str());
+                std::remove(contentPart.name().c_str());    // Best effort. We expect it to succeed, but we don't check whether it did
                 m_FileIdToName.erase(contentPart.id());       
                 // TODO: Distignuish various possible errors based on the error code, notably disk full, and return more specific error codes.
                 return Status(grpc::StatusCode::INTERNAL,  std::string("Error writing to file: ") + ex.what());
@@ -92,6 +93,7 @@ private:
 
 
 void RunServer() {
+    // TODO: Allow the port to be customised
   std::string server_address("0.0.0.0:50051");
   FileExchangeImpl service;
 
@@ -99,7 +101,7 @@ void RunServer() {
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   builder.RegisterService(&service);
   std::unique_ptr<Server> server(builder.BuildAndStart());
-  std::cout << "Server listening on " << server_address << std::endl;
+    std::cout << "Server listening on " << server_address << ". Press Ctrl-C to end." << std::endl;
   server->Wait();
 }
 
