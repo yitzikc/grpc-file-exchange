@@ -13,10 +13,10 @@
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
-#include "file_exchange.grpc.pb.h"
 
 #include "sequential_file_reader.h"
 #include "utils.h"
+#include "messages.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -29,21 +29,6 @@ using fileexchange::FileId;
 using fileexchange::FileContent;
 using fileexchange::FileExchange;
 
-FileId MakeFileId(std::int32_t id)
-{
-    FileId fid;
-    fid.set_id(id);
-    return fid;
-}
-
-FileContent MakeFileContent(std::int32_t id, const std::string name, const void* data, size_t data_len)
-{
-    FileContent fc;
-    fc.set_id(id);
-    fc.set_name(std::move(name));
-    fc.set_content(data, data_len);
-    return fc;
-}
 
 template <class StreamWriter>
 class FileReaderIntoStream : public SequentialFileReader {
@@ -61,8 +46,7 @@ public:
 protected:
     virtual void OnChunkAvailable(const void* data, size_t size) override
     {
-        std::string path = GetFilePath();
-        const std::string remote_filename = extract_basename(path);
+        const std::string remote_filename = extract_basename(GetFilePath());
         FileContent fc = MakeFileContent(m_id, remote_filename, data, size);
         m_writer.Write(fc);
     }
