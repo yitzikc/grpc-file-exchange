@@ -14,9 +14,8 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "sequential_file_reader.h"
 #include "utils.h"
-#include "messages.h"
+#include "file_reader_into_stream.h"
 
 using grpc::Channel;
 using grpc::ClientContext;
@@ -29,32 +28,6 @@ using fileexchange::FileId;
 using fileexchange::FileContent;
 using fileexchange::FileExchange;
 
-
-template <class StreamWriter>
-class FileReaderIntoStream : public SequentialFileReader {
-public:
-    FileReaderIntoStream(const std::string& filename, std::int32_t id, StreamWriter& writer)
-        : SequentialFileReader(filename)
-        , m_writer(writer)
-        , m_id(id)
-    {
-    }
-
-    using SequentialFileReader::SequentialFileReader;
-    using SequentialFileReader::operator=;
-
-protected:
-    virtual void OnChunkAvailable(const void* data, size_t size) override
-    {
-        const std::string remote_filename = extract_basename(GetFilePath());
-        FileContent fc = MakeFileContent(m_id, remote_filename, data, size);
-        m_writer.Write(fc);
-    }
-
-private:
-    StreamWriter& m_writer;
-    std::uint32_t m_id;
-};
 
 class FileExchangeClient {
 public:
