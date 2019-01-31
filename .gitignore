@@ -1,2 +1,5 @@
-.*o
+*.o
 *.pb.*
+data/
+file_exchange_client
+file_exchange_server
