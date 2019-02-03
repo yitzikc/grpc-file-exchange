@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 
 // Get the basename of the given path
