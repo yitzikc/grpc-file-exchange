@@ -1,5 +1,5 @@
 #include <iostream>
-#include <fstream>
+#include <sstream>
 #include <memory>
 #include <string>
 #include <map>
@@ -13,6 +13,7 @@
 #include <grpcpp/security/server_credentials.h>
 
 #include "sequential_file_writer.h"
+#include "file_reader_into_stream.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -52,7 +53,7 @@ public:
                 m_FileIdToName[contentPart.id()] = contentPart.name();
             }
             catch (const std::system_error& ex) {
-                const auto status_code = writer.NoSpaceLeft() ? StatusCode::RESOURCE_EXHAUSTED : StatusCode::INTERNAL;
+                const auto status_code = writer.NoSpaceLeft() ? StatusCode::RESOURCE_EXHAUSTED : StatusCode::ABORTED;
                 return Status(status_code, ex.what());
             }
         }
@@ -65,6 +66,27 @@ public:
         const FileId* request,
         ServerWriter<FileContent>* writer) override
     {
+        const auto id = request->id();
+        const auto it = m_FileIdToName.find(id);
+        if (m_FileIdToName.end() == it) {
+            return Status(grpc::StatusCode::NOT_FOUND, "No file with the id " + std::to_string(id));
+        }
+        const std::string filename = it->second;
+
+        try {
+            FileReaderIntoStream< ServerWriter<FileContent> > reader(filename, id, *writer);
+
+            // TODO: Make the chunk size configurable
+            const size_t chunk_size = 1UL << 20;    // Hardcoded to 1MB, which seems to be recommended from experience.
+            reader.Read(chunk_size);
+        }
+        catch (const std::exception& ex) {
+            std::ostringstream sts;
+            sts << "Error sending the file " << filename << ": " << ex.what();
+            std::cerr << sts.str() << std::endl;
+            return Status(StatusCode::ABORTED, sts.str());
+        }
+
         return Status::OK;
     }
 

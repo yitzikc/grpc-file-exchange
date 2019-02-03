@@ -18,7 +18,7 @@ public:
     // of data, but could hurt performance
 
     // Read the file, calling OnChunkAvailable() whenever data are available. It blocks until the reading
-    // is complete. In the event 
+    // is complete.
     void Read(size_t max_chunk_size);
 
     std::string GetFilePath() const
