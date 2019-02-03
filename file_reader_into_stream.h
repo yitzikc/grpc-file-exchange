@@ -3,6 +3,7 @@
 
 #include "sequential_file_reader.h"
 #include "messages.h"
+#include "utils.h"
 
 template <class StreamWriter>
 class FileReaderIntoStream : public SequentialFileReader {
