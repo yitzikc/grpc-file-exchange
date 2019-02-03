@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <string>
+#include "sys/errno.h"
 
 #include "sequential_file_reader.h"
 #include "messages.h"
@@ -25,7 +26,9 @@ protected:
     {
         const std::string remote_filename = extract_basename(GetFilePath());
         auto fc = MakeFileContent(m_id, remote_filename, data, size);
-        m_writer.Write(fc);
+        if (! m_writer.Write(fc)) {
+            raise_from_system_error_code("The server aborted the connection.", ECONNRESET);
+        }
     }
 
 private:
