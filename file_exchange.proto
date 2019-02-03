@@ -27,6 +27,12 @@ message FileContent {
 
   // TODO: Consider avoiding copying when initialising the content field by using [ctype = STRING_PIECE]
   // See: https://stackoverflow.com/a/43824243/1268949
-  // Note this seems to be available only in the latest versios of Protobuf from late 2018.
+  // Note this seems to be available only in the latest public versions of Protobuf from late 2018.
   bytes  content = 3;
+
+  // TODO: Add an optional field with the number of bytes still pending transfer. This will allow several things:
+  // * Give the receiving side a chance to check if it has enough space accept the incoming file.
+  // * Give the receiving side a chance to optimise the filesystem by allocating the necessary
+  //   amount of disk space using an appropriate system call e.g. posix_fallocate() where availale.
+  // * Allow the sending side to indicate an error by dropping it to 0 unexpectedly or using a negative value.
 }

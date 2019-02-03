@@ -52,8 +52,7 @@ public:
         }
         catch (const std::exception& ex) {
             std::cerr << "Failed to send the file " << filename << ": " << ex.what() << std::endl;
-            // TODO: Fail the RPC and return
-            // return;
+            // FIXME: Indicate to the server that something went wrong and that the trasfer should be aborted.
         }
 
         writer->WritesDone();
