@@ -83,6 +83,13 @@ SequentialFileReader::SequentialFileReader(const std::string& file_name)
 void SequentialFileReader::Read(size_t max_chunk_size)
 {
     size_t bytes_read = 0;
+
+    // Handle empty files. Note that m_data will likely be null, so we take care not to access it.
+    if (0 == m_size) {
+        OnChunkAvailable("", 0);
+        return;
+    }
+
     while (bytes_read < m_size) {
         size_t bytes_to_read = std::min(max_chunk_size, m_size - bytes_read);
 
