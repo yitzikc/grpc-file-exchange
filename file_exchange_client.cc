@@ -94,7 +94,7 @@ public:
                 if (! filename.empty()) {
                     std::cerr << filename << ' ';
                 }
-                std::cerr << " with id " << id << ": " << status.error_message() << std::endl;
+                std::cerr << "with id " << id << ": " << status.error_message() << std::endl;
                 return false;
             }
             std::cout << "Finished receiving the file "  << filename << " id: " << id << std::endl;
