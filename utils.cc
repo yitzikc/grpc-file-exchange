@@ -1,5 +1,6 @@
 #include <sstream>
 #include <stdexcept>
+#include <cassert>
 
 #include <limits.h>
 #include <libgen.h>
@@ -16,14 +17,18 @@ std::string extract_basename(const std::string& path)
     return std::string(result);
 }
 
-void raise_from_errno(const std::string& user_message)
+void raise_from_system_error_code(const std::string& user_message, int err)
 {
     std::ostringstream sts;
     if (user_message.size() > 0) {
         sts << user_message << ' ';
     }
 
-    const int err = errno;
-    sts << strerror(err);
+    assert(0 != err);
     throw std::system_error(std::error_code(err, std::system_category()), sts.str().c_str());
+}
+
+void raise_from_errno(const std::string& user_message)
+{
+    raise_from_system_error_code(user_message, errno);
 }

@@ -21,7 +21,7 @@ PROJECT_NAME = file_exchange
 
 # FIXME: Define dependencies on the h files correctly using e.g. makedepend
 
-COMMON_OBJS = $(PROJECT_NAME).pb.o $(PROJECT_NAME).grpc.pb.o sequential_file_reader.o utils.o messages.o
+COMMON_OBJS = $(PROJECT_NAME).pb.o $(PROJECT_NAME).grpc.pb.o sequential_file_reader.o sequential_file_writer.o utils.o messages.o
 
 vpath %.proto $(PROTOS_PATH)
 

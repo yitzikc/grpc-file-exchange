@@ -4,7 +4,6 @@
 #include <string>
 #include <map>
 #include <cstdint>
-#include <cstdio>
 #include <stdexcept>
 
 #include <grpc/grpc.h>
@@ -12,7 +11,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/security/server_credentials.h>
-#include "file_exchange.grpc.pb.h"
+
+#include "sequential_file_writer.h"
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -21,6 +21,7 @@ using grpc::ServerReader;
 using grpc::ServerReaderWriter;
 using grpc::ServerWriter;
 using grpc::Status;
+using grpc::StatusCode;
 
 using fileexchange::FileId;
 using fileexchange::FileContent;
@@ -37,57 +38,37 @@ public:
       ServerContext* context, ServerReader<FileContent>* reader,
       FileId* summary) override
     {
-        std::ofstream ofs;
         FileContent contentPart;
+        SequentialFileWriter writer;
         while (reader->Read(&contentPart)) {
-            if (! ofs.is_open()) {
-                try {
-                    ofs = OpenFileForWriting(contentPart.id(), contentPart.name());
-                    summary->set_id(contentPart.id());
-                }
-                catch (const std::system_error& ex) {
-                    // TODO: Distignuish various possible errors based on the error code, and return more specific error codes.
-                    return Status(grpc::StatusCode::INTERNAL, std::string("Failed to open file: ") + ex.what());
-                }
-            }
-
             try {
-                WriteData(ofs, contentPart.mutable_content());
+                // FIXME: Do something reasonable if a file with a different name but the same ID already exists
+                writer.OpenIfNecessary(contentPart.name());
+                auto* const data = contentPart.mutable_content();
+                writer.Write(*data);
+
+                summary->set_id(contentPart.id());
+                // FIXME: Protect from concurrent access by multiple threads
+                m_FileIdToName[contentPart.id()] = contentPart.name();
             }
             catch (const std::system_error& ex) {
-                // FIXME: Check that the name and ID suplied in the current message are same as in the initial message
-
-                std::remove(contentPart.name().c_str());    // Best effort. We expect it to succeed, but we don't check whether it did
-                m_FileIdToName.erase(contentPart.id());       
-                // TODO: Distignuish various possible errors based on the error code, notably disk full, and return more specific error codes.
-                return Status(grpc::StatusCode::INTERNAL,  std::string("Error writing to file: ") + ex.what());
+                const auto status_code = writer.NoSpaceLeft() ? StatusCode::RESOURCE_EXHAUSTED : StatusCode::INTERNAL;
+                return Status(status_code, ex.what());
             }
         }
 
         return Status::OK;
     }
 
+    Status GetFileContent(
+        ServerContext* context,
+        const FileId* request,
+        ServerWriter<FileContent>* writer) override
+    {
+        return Status::OK;
+    }
+
 private:
-    std::ofstream OpenFileForWriting(FileIdKey id, const std::string& name)
-    {
-        using std::ios_base;
-        std::ofstream ofs;
-        ofs.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        ofs.open(name, ios_base::out | ios_base::trunc | ios_base::binary);
-
-        // FIXME: Do something if a file with a different name but the same ID already exists
-        // FIXME: Protect from concurrent access by multiple threads
-        m_FileIdToName[id] = name;
-        return ofs;
-    }
-
-    void WriteData(std::ofstream& ofs, std::string* data)
-    {
-        // TODO: Write asynchronously instead
-        ofs << *data;
-        return;
-    }
-
     std::map<FileIdKey, std::string> m_FileIdToName;
 };
 
