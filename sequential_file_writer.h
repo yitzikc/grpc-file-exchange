@@ -16,9 +16,6 @@ public:
     // Open the file at the relative path 'name' for writing. On errors throw std::system_error
     void OpenIfNecessary(const std::string& name);
 
-    // Open the file for writing. On errors throws an exception drived from std::system_error
-    void OpenFileForWriting(const std::string& name);
-
     // Write data from a string. On errors throws an exception drived from std::system_error
     // This method may take ownership of the string. Hence no assumption may be made about
     // the data it contains after it returns.
