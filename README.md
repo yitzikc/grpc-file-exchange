@@ -2,7 +2,7 @@
 
 This package demonstrates the use of gRPC to store and retrieve potentialy large files. It comprises a client and a server.
 To upload a file the client has to specified a numeric id and a name, and the server saves it by the
-given name. To retrieve the file, the server needs to specify the name.
+given name. To retrieve the file, the client needs to specify the numeric id.
 
 # Prerequisites
 
@@ -41,7 +41,7 @@ To run manually:
 ```
 * Launch the client in a working directory other than the one where the server runs e.g.:
 ```bash
-# Upload to the server
+# Upload some file from your downloads folder to the server
 ./file_exchange_client put 1 ~/Downloads/SOME_FILE
 # Get the file into the working directory of the file_exchange_client
 ./file_exchange_client get 1
