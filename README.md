@@ -7,13 +7,16 @@ given name. To retrieve the file, the client needs to specify the numeric id.
 # Prerequisites
 
 Building requires
-* a fairly recent installation of Google RPC
-* Protobuf that supports version 3 of the format
+* a fairly recent installation of Google RPC. Versions ≥ 1.10 are expected to work.
+* Protobuf that supports version 3 of the format. Versions ≥ 3.5 are expected to work.
 * grpc_cpp_plugin
+* A POSIX platform. See below tested OSes.
 * G++ that supports C++ 14
 * bash ≥ 3.2 to run the demo script
 
-The program was tested on MacOS 10.4 ("Mojave"). It should work on other POSIX systems as well.
+The program was tested on the following platforms:
+* gRPC v1.18.0, built from source (using Homebrew) on MacOS 10.14 ("Mojave"), using Apple's G++ (actually LLVM), and bash versions 3.2 and 4.4
+* gRPC v1.10 from gRPC's official docker image grpc/cxx (see https://hub.docker.com/r/grpc/cxx). This uses Debian Linux and G++ 6.3
 
 # Building
 
