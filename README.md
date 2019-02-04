@@ -7,7 +7,7 @@ given name. To retrieve the file, the client needs to specify the numeric id.
 # Prerequisites
 
 Building requires
-* a fairly recent installation of Google RPC. Versions ≥ 1.10 are expected to work.
+* A fairly recent installation of Google RPC. Versions ≥ 1.8 are expected to work.
 * Protobuf that supports version 3 of the format. Versions ≥ 3.5 are expected to work.
 * grpc_cpp_plugin
 * A POSIX platform. See below tested OSes.
@@ -15,8 +15,8 @@ Building requires
 * bash ≥ 3.2 to run the demo script
 
 The program was tested on the following platforms:
-* gRPC v1.18.0, built from source (using Homebrew) on MacOS 10.14 ("Mojave"), using Apple's G++ (actually LLVM), and bash versions 3.2 and 4.4
-* gRPC v1.10 from gRPC's official docker image grpc/cxx (see https://hub.docker.com/r/grpc/cxx). This uses Debian Linux and G++ 6.3
+* gRPC v1.18.0, built from source (using Homebrew) on MacOS 10.14 ("Mojave"), using Apple's G++ (actually LLVM), and bash versions 3.2 and 4.4.
+* gRPC v1.8 and v1.12 from gRPC's official docker image grpc/cxx (see https://hub.docker.com/r/grpc/cxx). This uses Debian Linux and G++ 6.3 and bash 4.4.
 
 # Building
 
@@ -31,7 +31,7 @@ Choose a file on your system to use for the demonsration. The file has to be rea
 It will not be otherwise affected. To run the demo script
 
 ```bash
-./demo YOUR_FILE
+./demo.sh YOUR_FILE
 ```
 
 This will launch the server, upload the file and then retrieve it, and compare the resulting files
