@@ -2,19 +2,24 @@
 #include <stdexcept>
 #include <cassert>
 
+// Select GNU basename() on Linux
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <limits.h>
 #include <libgen.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "utils.h"
 
 std::string extract_basename(const std::string& path)
 {
-    char result[PATH_MAX] = "";
-    basename_r(path.c_str(), result);
-    // TODO: Check for errors
-
-    return std::string(result);
+    char* const temp_s = strdup(path.c_str());
+    std::string result(basename(temp_s));
+    free(temp_s);
+    return result;
 }
 
 void raise_from_system_error_code(const std::string& user_message, int err)
